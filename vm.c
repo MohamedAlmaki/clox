@@ -1,4 +1,5 @@
 #include <stdio.h> 
+#include <stdlib.h>
 #include "common.h"
 #include "vm.h"
 #include "value.h"
@@ -8,22 +9,22 @@
 Vm vm; 
 
 void resetStack() {
-    vm.stackTop = vm.stack->values;
+    vm.stackTop = vm.stack.values;
 }
 
 void initStack() {
-    vm.stack.capacity = 0;
+    vm.stack.capacity = 8;
     vm.stack.count = 0; 
-    vm.stack->values = NULL; 
+    vm.stack.values = GROW_ARRAY(vm.stack.values, Value, 0, vm.stack.capacity); 
+    resetStack(); 
 }
 
 void freeStack() {
-    FREE_ARRAY(Value, vm.stack->values, vm.stack.capacity);
-    initStack(); 
+    FREE_ARRAY(Value, vm.stack.values, vm.stack.capacity); 
 }
 
 void initVm() {
-    resetStack(); 
+    initStack(); 
 }
 
 void freeVm() {
@@ -31,18 +32,24 @@ void freeVm() {
 }
 
 void push(Value value) {
-    if(vm.stack.capacity > vm.stack.counter + 1){
-        int capacity =  GROW_CAPACITY(vm.count); 
+    int oldCapacity = vm.stack.capacity; 
+    if(oldCapacity < vm.stack.count + 2){ 
+        int capacity =  GROW_CAPACITY(oldCapacity); 
         vm.stack.capacity = capacity; 
-        GROW_ARRAY(vm.stack->values, Value, vm.stack.count, capacity); 
+        GROW_ARRAY(vm.stack.values, Value, oldCapacity, capacity); 
     }
-    *vm.stackTop = value; 
+   
+    // *(vm.stackTop) = value; 
+    vm.stack.values[vm.stack.count] = value;
+    printf("*****");
+    vm.stackTop = vm.stack.values + vm.stack.count; 
     ++vm.stackTop; 
     ++vm.stack.count; 
 }
 
 Value pop() {
     --vm.stackTop; 
+    --vm.stack.count; 
     return *vm.stackTop; 
 }
 
@@ -60,7 +67,7 @@ static InterpretResult run() {
     for(;;){
         #ifdef DEBUG_TRACE_EXECUTION
             printf("                "); 
-            for(Value* slot = vm.stack; slot < vm.stackTop; slot++){
+            for(Value* slot = vm.stack.values; slot < vm.stackTop; slot++){
                 printf("[ ");  
                 printValue(*slot); 
                 printf(" ]"); 
@@ -70,7 +77,7 @@ static InterpretResult run() {
         #endif 
 
         uint8_t instruction; 
-        switch ( instruction = READ_BYTE())
+        switch (instruction = READ_BYTE())
         {
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT(); 
