@@ -1,5 +1,5 @@
 # clox
-This is an implementation for an interpreter in c created by reading crafting interpreters book. This is a work in progress.
+This is an implementation for an interpreter in C. This is a work in progress. It was created by following crafting interpreters book. 
 
 # Last Changes: 
 - Implemented dynamic stack problem after completing chapter 15.
